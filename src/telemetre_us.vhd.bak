@@ -1,0 +1,254 @@
+-- library ieee;
+-- use ieee.std_logic_1164.all;
+-- use ieee.numeric_std.all;
+-- use ieee.numeric_std.unsigned;
+
+
+
+-- entity telemetre_us is 
+-- Generic(
+--         Fclock : positive := 50E6;
+--         vitesse_son: positive:=340
+--     ); -- System Clock Freq in Hertz
+-- port(
+--     clk: in std_logic;
+--     rst_n : in std_logic;
+--     echo : in std_logic;
+--     trig: out std_logic;
+--     --distance : out std_logic_vector(8 downto 0) -- car la distance max que peut mesurer le capteur est de 400cm , soit 9 bit min voir datasheet.
+--     distance : out unsigned(8 downto 0)
+-- );
+-- end entity;
+
+-- architecture struct of telemetre_us is
+--     -- Signaux intetrnes
+--     signal tick_10us_internal : std_logic;       -- Signal interne pour 10 µs
+--     signal time_echo : integer range 0 to 1800000; -- Durée du signal echo
+--     signal valid_echo : std_logic;                -- Indique que la mesure est prête
+-- begin
+
+--     -- Instance du générateur de trig
+--     u_genere_trig : entity work.genere10us
+--         generic map (
+--             frequence_horloge => Fclock
+--         )
+--         port map (
+--             clk       => clk,
+--             rst       => rst_n,
+--             tick_10us => tick_10us_internal -- Connexion au signal interne
+--         );
+
+--     -- Connecter le signal interne à la sortie trig
+--     trig <= tick_10us_internal;
+
+--     -- Instance du module de mesure de echo
+--     u_mesure_echo : entity work.mesure_echo 
+--         port map (
+--             clk       => clk,
+--             rst       => rst_n,
+--             echo      => echo,
+--             time_echo => time_echo,
+--             valid     => valid_echo
+--         ); -- fonctionne bien d'apres la simulation 
+
+-- process(clk, rst_n)
+--     variable temporaire : integer; -- Variable pour les calculs intermédiaires
+-- begin
+--     if rst_n = '1' then
+--         distance <= (others => '0'); -- Réinitialisation
+--         temporaire := 0; -- Réinitialisation de la variable temporaire
+--     elsif rising_edge(clk) then
+--         if valid_echo = '1' then
+--             -- Calcul de la distance (unsigned -> integer -> unsigned)
+--             temporaire := ((time_echo) * 17) / (50000); -- x100 pour la conversion en cm
+--             -- Conversion du résultat en unsigned et limitation à 9 bits
+--             distance <= to_unsigned(temporaire, 9);
+--         end if;
+--     end if;
+-- end process;
+-- end architecture;
+
+
+-- code ci-dessus fonctionne correctement
+
+-- library ieee;
+-- use ieee.std_logic_1164.all;
+-- use ieee.numeric_std.all;
+
+-- entity telemetre_us is 
+--     Generic(
+--         Fclock : positive := 50E6;
+--         vitesse_son : positive := 340
+--     ); -- System Clock Freq in Hertz
+--     port(
+--         clk      : in std_logic;
+--         rst_n    : in std_logic;
+--         echo     : in std_logic;
+--         trig     : out std_logic;
+--         distance : out unsigned(8 downto 0) -- Distance en cm
+--     );
+-- end entity;
+
+-- architecture struct of telemetre_us is
+--     -- Signaux internes
+--     signal tick_10us_internal : std_logic;       -- Signal interne pour 10 µs
+--     signal time_echo : integer range 0 to 1800000; -- Durée du signal echo
+--     signal valid_echo : std_logic;              -- Indique que la mesure est prête
+--     signal trig_60ms : std_logic := '0';        -- Signal pour générer trig toutes les 60 ms
+--     signal counter_60ms : integer range 0 to 3000000 := 0; -- Compteur pour 60 ms
+-- begin
+
+--     -- Instance du générateur de trig 10 µs
+--     u_genere_trig : entity work.genere10us
+--         generic map (
+--             frequence_horloge => Fclock
+--         )
+--         port map (
+--             clk       => clk,
+--             rst       => rst_n,
+--             tick_10us => tick_10us_internal -- Connexion au signal interne
+--         );
+
+--     -- Générer trig toutes les 60 ms
+--     process(clk, rst_n)
+--     begin
+--         if rst_n = '1' then
+--             counter_60ms <= 0;
+--             trig_60ms <= '0';
+--         elsif rising_edge(clk) then
+--             if counter_60ms < 3000000 - 1 then
+--                 counter_60ms <= counter_60ms + 1;
+--             else
+--                 counter_60ms <= 0;
+--                 trig_60ms <= '1'; -- Activer trig pendant un cycle
+--             end if;
+
+--             -- Désactiver trig après un cycle
+--             if counter_60ms = 1 then
+--                 trig_60ms <= '0';
+--             end if;
+--         end if;
+--     end process;
+
+--     -- Assigner trig_60ms au signal trig externe
+--     trig <= trig_60ms;
+
+--     -- Instance du module de mesure de echo
+--     u_mesure_echo : entity work.mesure_echo 
+--         port map (
+--             clk       => clk,
+--             rst       => rst_n,
+--             echo      => echo,
+--             time_echo => time_echo,
+--             valid     => valid_echo
+--         );
+
+--     -- Calcul de la distance
+--     process(clk, rst_n)
+--         variable temporaire : integer; -- Variable pour les calculs intermédiaires
+--     begin
+--         if rst_n = '1' then
+--             distance <= (others => '0'); -- Réinitialisation
+--             temporaire := 0; -- Réinitialisation de la variable temporaire
+--         elsif rising_edge(clk) then
+--             if valid_echo = '1' then
+--                 -- Calcul de la distance (unsigned -> integer -> unsigned)
+--                 temporaire := ((time_echo) * 17) / (50000); -- Conversion en cm
+--                 -- Conversion du résultat en unsigned et limitation à 9 bits
+--                 distance <= to_unsigned(temporaire, 9);
+--             end if;
+--         end if;
+--     end process;
+
+-- end architecture;
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity telemetre_us is 
+    Generic(
+        Fclock : positive := 50E6;
+        vitesse_son : positive := 340
+    );
+    port(
+        clk      : in std_logic;
+        rst_n    : in std_logic;
+        echo     : in std_logic;
+        trig     : out std_logic;
+        distance : out unsigned(8 downto 0) -- Distance en cm
+    );
+end entity;
+
+architecture struct of telemetre_us is
+    -- Signaux internes
+    signal tick_10us_internal : std_logic;       -- Signal interne pour 10 µs
+    signal time_echo : integer range 0 to 1800000; -- Durée du signal echo
+    signal valid_echo : std_logic;              -- Indique que la mesure est prête
+    signal counter_60ms : integer range 0 to 3000000 := 0; -- Compteur pour 60 ms
+    signal enable_10us : std_logic := '0';      -- Signal pour activer genere10us
+begin
+
+    -- Instance du générateur de 10 µs
+    u_genere_trig : entity work.genere10us
+        generic map (
+            frequence_horloge => Fclock
+        )
+        port map (
+            clk       => clk,
+            rst       => rst_n,
+            tick_10us => tick_10us_internal
+        );
+
+    -- Générer un signal enable pour genere10us toutes les 60 ms
+    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            counter_60ms <= 0;
+            enable_10us <= '0';
+        elsif rising_edge(clk) then
+            if counter_60ms < 3000000 - 1 then
+                counter_60ms <= counter_60ms + 1;
+            else
+                counter_60ms <= 0;
+                enable_10us <= '1'; -- Activer genere10us
+            end if;
+
+            -- Désactiver enable après un cycle
+            if counter_60ms = 1 then
+                enable_10us <= '0';
+            end if;
+        end if;
+    end process;
+
+    -- Générer trig en fonction de tick_10us
+    trig <= tick_10us_internal when enable_10us = '1' else '0';
+
+    -- Instance du module de mesure de echo
+    u_mesure_echo : entity work.mesure_echo 
+        port map (
+            clk       => clk,
+            rst       => rst_n,
+            echo      => echo,
+            time_echo => time_echo,
+            valid     => valid_echo
+        );
+
+    -- Calcul de la distance
+    process(clk, rst_n)
+        variable temporaire : integer; -- Variable pour les calculs intermédiaires
+    begin
+        if rst_n = '0' then
+            distance <= (others => '0'); -- Réinitialisation
+            temporaire := 0; -- Réinitialisation de la variable temporaire
+        elsif rising_edge(clk) then
+            if valid_echo = '1' then
+                -- Calcul de la distance (unsigned -> integer -> unsigned)
+                temporaire := ((time_echo) * 17) / (50000); -- Conversion en cm
+                -- Conversion du résultat en unsigned et limitation à 9 bits
+                distance <= to_unsigned(temporaire, 9);
+            end if;
+        end if;
+    end process;
+
+end architecture;

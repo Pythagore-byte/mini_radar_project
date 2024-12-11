@@ -1,0 +1,47 @@
+/*
+ * "Hello World" example.
+ *
+ * This example prints 'Hello from Nios II' to the STDOUT stream. It runs on
+ * the Nios II 'standard', 'full_featured', 'fast', and 'low_cost' example
+ * designs. It runs with or without the MicroC/OS-II RTOS and requires a STDOUT
+ * device in your system's hardware.
+ * The memory footprint of this hosted application is ~69 kbytes by default
+ * using the standard reference design.
+ *
+ * For a reduced footprint version of this template, and an explanation of how
+ * to reduce the memory footprint for a given application, see the
+ * "small_hello_world" template.
+ *
+ */
+
+#include <stdio.h>
+#include "system.h"
+#include <io.h>
+#include <unistd.h>
+
+
+
+
+
+int main()
+{
+	//volatile int *valeur_telemetre = (int *)0x81048;
+  printf("Hello from Nios II!\n");
+  //int valeur;
+  while(1)
+  {
+	  for (int i=60; i<180; i++)
+	  {
+		  //IOWR(0x81048,1,180);
+		  usleep(20*2000);
+
+		  //IOWR(0x81048,1,90);
+
+		  IOWR(0x81048,1,i);
+
+
+	  }
+  }
+
+  return 0;
+}
